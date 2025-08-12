@@ -26,7 +26,7 @@ Token& Token::operator=(const Token& rhs) {
     }
     return *this;
 }
-std::string Token::toString()
+std::string Token::toString() const
 {
     std::ostringstream oss;
     oss << TokenTypeToStringMap[m_type] << " " << m_lexeme << " " << (m_literal != nullptr ? "TODO" : "nullptr");

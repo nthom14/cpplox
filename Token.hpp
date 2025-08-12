@@ -16,7 +16,7 @@ public:
     Token(const TokenType& type, const std::string& lexeme, const LoxObject* literal, size_t line);
     Token(const Token& other);
     Token& operator=(const Token& rhs);
-    std::string toString();
+    std::string toString() const;
 };
 
 //final TokenType type;
