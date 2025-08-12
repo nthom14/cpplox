@@ -5,4 +5,4 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "-Wall /EHsc")
 
-add_executable(lox lox.cpp LoxObject.hpp LoxObject.cpp TokenType.hpp Token.hpp Token.cpp Scanner.hpp Scanner.cpp)
+add_executable(lox main.cpp LoxObject.hpp LoxObject.cpp TokenType.hpp Token.hpp Token.cpp Scanner.hpp Scanner.cpp)
