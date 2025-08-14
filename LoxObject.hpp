@@ -1,5 +1,7 @@
 #pragma once 
 
+#include <string>
+
 class LoxObject {
 public:
     LoxObject();
@@ -8,4 +10,5 @@ public:
     LoxObject& operator=(const LoxObject& rhs);
     LoxObject(LoxObject&& other) noexcept;
     LoxObject& operator=(LoxObject&& rhs) noexcept;
+    virtual std::string toString();
 };

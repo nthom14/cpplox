@@ -26,9 +26,13 @@ Token& Token::operator=(const Token& rhs) {
     }
     return *this;
 }
+void Token::setLiteral(std::unique_ptr<LoxObject> u_ptr_loxObject)
+{
+    m_literal = std::move(u_ptr_loxObject);
+}
 std::string Token::toString() const
 {
     std::ostringstream oss;
-    oss << TokenTypeToStringMap[m_type] << " " << m_lexeme << " " << (m_literal != nullptr ? "TODO" : "nullptr");
+    oss << TokenTypeToStringMap[m_type] << " " << m_lexeme << " " << (m_literal != nullptr ? m_literal->toString() : "nullptr");
     return oss.str();
 }

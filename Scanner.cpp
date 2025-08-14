@@ -1,4 +1,7 @@
 #include "Scanner.hpp"
+#include "LoxTypes.hpp"
+#include "Lox.hpp"
+#include <stdexcept>
 
 std::map<std::string, TokenType> Scanner::keywords {
     {"and", AND},
@@ -19,13 +22,17 @@ std::map<std::string, TokenType> Scanner::keywords {
     {"while", WHILE}
 };
 
-Scanner::Scanner(const std::string& code_source) : source(code_source){
-
+Scanner::Scanner(const std::string& code_source) 
+    : source(code_source)
+    , tokens()
+    , start(0)
+    , current(0)
+    , line(1) {
 }
 bool Scanner::isAtEnd() {
-    return current >= source.size();
+    return (current >= source.size());
 }
-std::list<Token> & Scanner::scanTokens()
+std::list<std::unique_ptr<Token>> & Scanner::scanTokens()
 {
     while (!isAtEnd()) {
         start = current;
@@ -33,7 +40,6 @@ std::list<Token> & Scanner::scanTokens()
     }
     //tokens.push_back(Token(EOF, std::string(""), nullptr, line));
     return tokens;
-    //return std::list<Token>();
 }
 void Scanner::scanToken()
 {
@@ -88,7 +94,7 @@ void Scanner::scanToken()
                 }
             }
             else if (match('*')) {
-                //multilineComment();
+                multilineComment();
             }
             else {
                 addToken(SLASH);
@@ -105,12 +111,20 @@ void Scanner::scanToken()
             string();
             break;
         default:
-            ;
+            if (isDigit(ch)) {
+                number();
+            }
+            else if (isAlpha(ch)) {
+                identifier();
+            }
+            else {
+                Lox::error(line, "Unexpected character.");
+            }
     }
     return;
 }
 char Scanner::advance() {
-    ++current;
+    current++;
     return source[current - 1];
 }
 void Scanner::addToken(TokenType type)
@@ -119,8 +133,8 @@ void Scanner::addToken(TokenType type)
 }
 void Scanner::addToken(TokenType type, LoxObject* literal)
 {
-    std::string text = source.substr(start, current);
-    tokens.push_back(Token(type, text, literal, line));
+    std::string text = source.substr(start, current-start);
+    tokens.push_back(std::make_unique<Token>(Token(type, text, literal, line)));
 }
 bool Scanner::match(char expected)
 {
@@ -140,26 +154,22 @@ char Scanner::peek() {
     return source[current];
 }
 void Scanner::multilineComment() {
-    //TODO
-    /*while (peek() != '*' && !isAtEnd()) {
+    while (peek() != '*' && !isAtEnd()) {
         if (peek() == '\n') {
             line++;
         }
         advance();
     }
     if (isAtEnd()) {
-        Lox.error(line, "Unterminated comment.");
-    }
-    else if (peekNext() != '/') {
-        Lox.error(line, "Unterminated comment.");
-    }
-    else {
+        Lox::error(line, "Unterminated /* comment - no * is found.");
+    } else if (peekNext() != '/') {
+        Lox::error(line, "Unterminated /* comment - no / is found.");
+    } else {
         advance();
-    }*/
+    }
 }
 void Scanner::string() {
-    //TODO
-    /*char ch = peek();
+    char ch = peek();
     while (ch != '"' && !isAtEnd()) {
         if (ch == '\n') {
             line++;
@@ -168,26 +178,69 @@ void Scanner::string() {
         ch = peek();
     }
     if (isAtEnd()) {
-        Lox.error(line, "Unterminated string.");
+        Lox::error(line, "Unterminated string.");
         return;
     }
     advance();
-    String value = source.substr(start + 1, current - 1);
-    addToken(STRING, value);*/
+    addToken(STRING, nullptr);
+    std::string strval = source.substr(start + 1, current - start - 2);
+    tokens.back()->setLiteral(std::make_unique<LoxString>(strval));
     return;
 }
-//=============================================================================
-// //TODO
-//default:
-//    if (isDigit(c)) {
-//        number();
-//    }
-//    else if (isAlpha(c)) {
-//        identifier();
-//    }
-//    else {
-//        Lox.error(line, "Unexpected character.");
-//    }
-//}
-//=============================================================================
+bool Scanner::isDigit(char ch)
+{
+    return (ch >= '0' && ch <= '9');
+}
+bool Scanner::isAlpha(char ch)
+{
+    return ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch == '_';
+}
+void Scanner::number()
+{
+    while (isDigit(peek())) {
+        advance();
+    }
+    if (peek() == '.' && isDigit(peekNext())) {
+        // consume '.' and continue scanning after the '.' character.
+        advance();
+        while (isDigit(peek())) {
+            advance();
+        }
+    }
+    try {
+        std::string val_str = source.substr(start, current - start);
+        double double_val = std::stod(val_str);
+        addToken(NUMBER, nullptr);
+        tokens.back()->setLiteral(std::make_unique<LoxDouble>(double_val));
+    }
+    catch (std::out_of_range& oor) {
+        Lox::error(line, "double value out of range");
+    }
+    catch (std::invalid_argument& ia) {
+        Lox::error(line, "invalid argument for double value conversion");
+    }
+}
+char Scanner::peekNext()
+{
+    if (current + 1 >= source.length()) {
+        return '\0';
+    }
+    return source[current + 1];
+}
+void Scanner::identifier() {
+    while (isAlphaNumeric(peek())) {
+        advance();
+    }
+    TokenType type = IDENTIFIER;
+    std::string text = source.substr(start, current - start);
+    const auto it = keywords.find(text);
+    if (it != std::cend(keywords)) {
+        type = it->second;
+    }
+    addToken(type);
+}
+bool Scanner::isAlphaNumeric(char ch) {
+    return isAlpha(ch) || isDigit(ch);
+}
+
 

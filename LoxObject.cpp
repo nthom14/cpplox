@@ -24,3 +24,7 @@ LoxObject& LoxObject::operator=(LoxObject&& rhs) noexcept {
     }
     return *this;
 }
+std::string LoxObject::toString()
+{
+    return "LoxNull";
+}
